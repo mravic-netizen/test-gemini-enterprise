@@ -1,0 +1,71 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _ENV: "dev"
+  _TF_VERSION: "1.6.6"
+
+steps:
+
+# --------------------------------------------
+# Step 1 - Terraform Init
+# --------------------------------------------
+- id: "terraform-init"
+  name: "hashicorp/terraform:${_TF_VERSION}"
+  entrypoint: sh
+  args:
+    - "-c"
+    - |
+      terraform init \
+        -backend-config="prefix=asco/${_ENV}"
+
+# --------------------------------------------
+# Step 2 - Terraform Validate
+# --------------------------------------------
+- id: "terraform-validate"
+  name: "hashicorp/terraform:${_TF_VERSION}"
+  entrypoint: sh
+  args:
+    - "-c"
+    - |
+      terraform validate
+
+# --------------------------------------------
+# Step 3 - Terraform Plan
+# --------------------------------------------
+- id: "terraform-plan"
+  name: "hashicorp/terraform:${_TF_VERSION}"
+  entrypoint: sh
+  args:
+    - "-c"
+    - |
+      terraform plan \
+        -var="environment=${_ENV}" \
+        -out=tfplan
+
+# --------------------------------------------
+# Step 4 - Manual Approval Gate
+# --------------------------------------------
+- id: "manual-approval"
+  name: "gcr.io/cloud-builders/gcloud"
+  entrypoint: sh
+  args:
+    - "-c"
+    - |
+      echo "Waiting for manual approval before applying Terraform..."
+  waitFor:
+    - "terraform-plan"
+  #approval: true
+
+# --------------------------------------------
+# Step 5 - Terraform Apply
+# --------------------------------------------
+- id: "terraform-apply"
+  name: "hashicorp/terraform:${_TF_VERSION}"
+  entrypoint: sh
+  args:
+    - "-c"
+    - |
+      terraform apply -auto-approve tfplan
+  waitFor:
+    - "manual-approval"
