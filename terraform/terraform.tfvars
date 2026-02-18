@@ -1,6 +1,6 @@
 # Example terraform.tfvars file. Replace the placeholder values with your own.
 
-project_id                   = "sl-test-project-353312"
+project_id                   = "apigee-upskill"
 project_number               = ""
 region                       = "us-central1"
 unstructured_data_bucket_name = "cloud-samples-data/gen-app-builder/search/cymbal-bank-employee"

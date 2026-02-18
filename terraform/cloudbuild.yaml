@@ -2,75 +2,58 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 substitutions:
-  _ENV: "dev"
   _TF_VERSION: "1.6.6"
 
 steps:
 
-# --------------------------------------------
-# Step 1 - Terraform Init
-# --------------------------------------------
-- id: "terraform-init"
-  name: "hashicorp/terraform:${_TF_VERSION}"
-  dir: 'terraform'
+# Terraform Init
+- name: hashicorp/terraform:${_TF_VERSION}
+  id: Terraform Init
   entrypoint: sh
   args:
-    - "-c"
+    - -c
     - |
-      terraform init \
-        -backend-config="prefix=asco/${_ENV}"
+      terraform init
 
-# --------------------------------------------
-# Step 2 - Terraform Validate
-# --------------------------------------------
-- id: "terraform-validate"
-  name: "hashicorp/terraform:${_TF_VERSION}"
+# Terraform Validate
+- name: hashicorp/terraform:${_TF_VERSION}
+  id: Terraform Validate
   dir: 'terraform'
   entrypoint: sh
   args:
-    - "-c"
+    - -c
     - |
       terraform validate
 
-# --------------------------------------------
-# Step 3 - Terraform Plan
-# --------------------------------------------
-- id: "terraform-plan"
-  name: "hashicorp/terraform:${_TF_VERSION}"
+# Terraform Plan
+- name: hashicorp/terraform:${_TF_VERSION}
+  id: Terraform Plan
   dir: 'terraform'
   entrypoint: sh
   args:
-    - "-c"
+    - -c
     - |
-      terraform plan \
-        -var="environment=${_ENV}" \
-        -out=tfplan
+      terraform plan -out=tfplan
 
-# --------------------------------------------
-# Step 4 - Manual Approval Gate
-# --------------------------------------------
-- id: "manual-approval"
-  name: "gcr.io/cloud-builders/gcloud"
+# Manual Approval
+- name: gcr.io/cloud-builders/gcloud
+  id: Manual Approval
   dir: 'terraform'
-  entrypoint: sh
+  entrypoint: bash
   args:
-    - "-c"
+    - -c
     - |
-      echo "Waiting for manual approval before applying Terraform..."
-  waitFor:
-    - "terraform-plan"
+      echo "Waiting for manual approval before apply..."
+  waitFor: ['Terraform Plan']
   #approval: true
 
-# --------------------------------------------
-# Step 5 - Terraform Apply
-# --------------------------------------------
-- id: "terraform-apply"
-  name: "hashicorp/terraform:${_TF_VERSION}"
+# Terraform Apply
+- name: hashicorp/terraform:${_TF_VERSION}
+  id: Terraform Apply
   dir: 'terraform'
   entrypoint: sh
   args:
-    - "-c"
+    - -c
     - |
       terraform apply -auto-approve tfplan
-  waitFor:
-    - "manual-approval"
+  waitFor: ['Manual Approval']
