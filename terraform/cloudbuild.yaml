@@ -12,6 +12,7 @@ steps:
 # --------------------------------------------
 - id: "terraform-init"
   name: "hashicorp/terraform:${_TF_VERSION}"
+  dir: 'terraform'
   entrypoint: sh
   args:
     - "-c"
@@ -24,6 +25,7 @@ steps:
 # --------------------------------------------
 - id: "terraform-validate"
   name: "hashicorp/terraform:${_TF_VERSION}"
+  dir: 'terraform'
   entrypoint: sh
   args:
     - "-c"
@@ -35,6 +37,7 @@ steps:
 # --------------------------------------------
 - id: "terraform-plan"
   name: "hashicorp/terraform:${_TF_VERSION}"
+  dir: 'terraform'
   entrypoint: sh
   args:
     - "-c"
@@ -48,6 +51,7 @@ steps:
 # --------------------------------------------
 - id: "manual-approval"
   name: "gcr.io/cloud-builders/gcloud"
+  dir: 'terraform'
   entrypoint: sh
   args:
     - "-c"
@@ -62,6 +66,7 @@ steps:
 # --------------------------------------------
 - id: "terraform-apply"
   name: "hashicorp/terraform:${_TF_VERSION}"
+  dir: 'terraform'
   entrypoint: sh
   args:
     - "-c"
