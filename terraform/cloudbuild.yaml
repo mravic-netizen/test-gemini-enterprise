@@ -9,6 +9,7 @@ steps:
 # Terraform Init
 - name: hashicorp/terraform:${_TF_VERSION}
   id: Terraform Init
+  dir: 'terraform'
   entrypoint: sh
   args:
     - -c
