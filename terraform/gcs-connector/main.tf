@@ -16,11 +16,11 @@ terraform {
 }
 
 provider "google" {
-  project               = var.project_id
+  project = var.project_id
 }
 
 provider "google-beta" {
-  project               = var.project_id
+  project = var.project_id
 }
 
 locals {
@@ -44,7 +44,7 @@ resource "google_discovery_engine_data_store" "gemini_search_store" {
   data_store_id               = "${local.name_prefix}-data-store-${random_id.gemini_suffix.hex}"
   display_name                = "Gemini Search Data Store ${random_id.gemini_suffix.hex}"
   industry_vertical           = "GENERIC"
-  content_config              = "NO_CONTENT"
+  content_config              = "CONTENT_REQUIRED"
   solution_types              = [local.solution_type]
   create_advanced_site_search = false
 }
@@ -55,15 +55,29 @@ resource "null_resource" "import_documents" {
   depends_on = [
     google_discovery_engine_data_store.gemini_search_store,
   ]
+  
+# Optional: Add a trigger to re-run import if bucket contents change significantly
+  triggers = {
+    gcs_uri   = var.gcs_import_uri
+    data_store_id = google_discovery_engine_data_store.gemini_search_store.data_store_id
+  }
 
   provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
     command = <<-EOT
-      gcloud beta discovery-engine documents import \
-        --project=${var.project_id} \
-        --location=us \
-        --data-store=${google_discovery_engine_data_store.gemini_search_store.data_store_id} \
-        --source-bucket="gs://90187406059_80051816_us_import_content_with_faq_csv" \
-        --format=document
+      TOKEN=$(gcloud auth print-access-token)
+
+      curl -X POST \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "Content-Type: application/json; charset=utf-8" \
+      -d '{
+        "gcsSource": {
+          "inputUris": ["${var.gcs_import_uri}/*"],
+          "dataSchema": "content"
+        },
+        "reconciliationMode": "INCREMENTAL"
+      }' \
+      "https://${var.location == "global" ? "" : "${var.location}-"}discoveryengine.googleapis.com/v1beta/projects/${var.project_id}/locations/${var.location}/collections/default_collection/dataStores/${google_discovery_engine_data_store.gemini_search_store.data_store_id}/branches/0/documents:import"
     EOT
   }
 }
