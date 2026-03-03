@@ -13,3 +13,8 @@ variable "organization_id" {
   description = "The Google Cloud Organization ID"
   type        = string
 }
+
+variable "gcs_import_uri" {
+  type        = string
+  description = "The GCS path to import documents from"
+}
